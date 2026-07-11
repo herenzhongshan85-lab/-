@@ -1,0 +1,16 @@
+{
+  "name": "shop-schedule-app",
+  "version": "1.0.0",
+  "description": "店舗メンバーの長期休暇・ランチ出勤・休館日を共有パスワードで管理するアプリ",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "express-session": "^1.18.0"
+  }
+}
