@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>料亭ブンゴ祇園スケジュール確認</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --board:#1B2E35;
+    --board-panel:#24404A;
+    --board-panel-2:#2C4A54;
+    --paper:#F3ECDC;
+    --paper-dim:#e9e0cb;
+    --ink:#223238;
+    --ink-soft:#54625f;
+    --cream-text:#E8E1D2;
+    --amber:#E3A23C;
+    --rust:#C1543A;
+    --sage:#6E8B5D;
+    --line:rgba(232,225,210,0.14);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;}
+  .app{
+    font-family:'Noto Sans JP', sans-serif;
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(255,255,255,0.05), transparent 60%),
+      var(--board);
+    color:var(--cream-text);
+    min-height:100%;
+    padding:20px 14px 60px;
+  }
+  .wrap{max-width:880px;margin:0 auto;}
+
+  /* ---- header ticket ---- */
+  .headboard{
+    position:relative;
+    background:var(--paper);
+    color:var(--ink);
+    border-radius:8px 8px 0 0;
+    padding:22px 26px 26px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.28);
+  }
+  .headboard::after{
+    content:"";
+    position:absolute;left:0;right:0;bottom:-15px;height:16px;
+    background:
+      linear-gradient(135deg, var(--paper) 50%, transparent 50%),
+      linear-gradient(45deg, var(--paper) 50%, transparent 50%);
+    background-size:16px 16px;
+    background-position:bottom left;
+    background-repeat:repeat-x;
+  }
+  .pin{
+    position:absolute; top:-9px; left:50%; transform:translateX(-50%);
+    width:16px;height:16px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #ff8a6b, var(--rust) 65%);
+    box-shadow:0 3px 6px rgba(0,0,0,0.4);
+  }
+  .shopname-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+  .shopname{
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    font-weight:900; font-size:clamp(20px,4vw,26px);
+    letter-spacing:0.02em;
+  }
+  .shopname[contenteditable]:focus{outline:2px dashed var(--amber); outline-offset:3px;}
+  .subtitle{font-size:12.5px;color:var(--ink-soft);margin-top:4px;}
+
+  .tabs{display:flex;gap:8px;margin-top:18px;}
+  .tab-btn{
+    font-family:'Zen Kaku Gothic New',sans-serif;
+    font-weight:700; font-size:14px;
+    padding:9px 16px; border-radius:20px; border:2px solid var(--ink);
+    background:transparent; color:var(--ink); cursor:pointer;
+    transition:background .15s, color .15s;
+  }
+  .tab-btn.active{background:var(--ink); color:var(--paper);}
+  .tab-btn:focus-visible{outline:3px solid var(--amber); outline-offset:2px;}
+
+  /* ---- body panel ---- */
+  .board-body{
+    background:var(--board-panel);
+    border-radius:0 0 12px 12px;
+    padding:30px 22px 26px;
+    margin-top:20px;
+  }
+
+  .section-label{
+    font-family:'Zen Kaku Gothic New',sans-serif;
+    font-weight:700; font-size:13px; letter-spacing:.08em;
+    color:var(--amber); text-transform:uppercase; margin:0 0 10px;
+  }
+
+  /* member chips */
+  .member-group{margin-bottom:14px;}
+  .member-group-label{
+    font-size:11.5px; color:#c7d3ce; margin-bottom:6px; letter-spacing:.04em;
+    display:flex; align-items:center; gap:6px; font-weight:700;
+  }
+  .cat-swatch{width:9px;height:9px;border-radius:2px; flex:none;}
+  .role-badge{
+    font-size:9.5px; padding:1px 6px; border-radius:8px; margin-left:2px;
+    background:rgba(232,225,210,0.12); color:#c7d3ce; font-weight:500;
+  }
+  .add-member select{
+    background:var(--board); border:1px solid var(--line); color:var(--cream-text);
+    border-radius:8px; padding:9px 10px; font-size:13.5px; font-family:inherit;
+  }
+
+  .member-row{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px;}
+  .chip{
+    display:flex; align-items:center; gap:6px;
+    background:var(--board-panel-2); border:1px solid var(--line);
+    border-radius:20px; padding:6px 8px 6px 6px; font-size:13.5px;
+  }
+  .dot{width:11px;height:11px;border-radius:50%;flex:none;}
+  .chip button{
+    background:none;border:none;color:var(--cream-text);opacity:.5;
+    cursor:pointer;font-size:14px;line-height:1;padding:2px 4px;
+  }
+  .chip button:hover{opacity:1;color:var(--rust);}
+  .add-member{display:flex;gap:8px;margin-bottom:26px;flex-wrap:wrap;}
+  .add-member input{
+    flex:1; min-width:140px;
+    background:var(--board); border:1px solid var(--line); color:var(--cream-text);
+    border-radius:8px; padding:9px 12px; font-size:14px; font-family:inherit;
+  }
+  .add-member input::placeholder{color:#8fa19d;}
+  .btn{
+    font-family:'Zen Kaku Gothic New',sans-serif; font-weight:700; font-size:13.5px;
+    background:var(--amber); color:#2b1d0a; border:none; border-radius:8px;
+    padding:9px 16px; cursor:pointer; transition:filter .15s, transform .1s;
+  }
+  .btn:hover{filter:brightness(1.08);}
+  .btn:active{transform:scale(.97);}
+  .btn.ghost{background:transparent; color:var(--cream-text); border:1px solid var(--line);}
+  .btn:focus-visible{outline:3px solid var(--amber); outline-offset:2px;}
+
+  /* calendar */
+  .quick-picker{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    background:var(--board-panel-2); border:1px solid var(--line);
+    border-radius:10px; padding:12px 14px; margin-bottom:16px;
+  }
+  .quick-picker label{font-size:12.5px; color:#a9bab5; white-space:nowrap;}
+  .quick-picker select{
+    background:var(--board); border:1px solid var(--line); color:var(--cream-text);
+    border-radius:8px; padding:7px 10px; font-size:13.5px; font-family:inherit;
+  }
+  .quick-picker .hint{font-size:12px; color:#8fa19d;}
+
+  .day-cell.quick-on{
+    box-shadow:0 0 0 2px var(--rust) inset;
+  }
+
+  .cal-nav{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+  .cal-title{font-family:'Zen Kaku Gothic New',sans-serif; font-weight:700; font-size:18px;}
+  .nav-btns{display:flex; gap:6px;}
+  .icon-btn{
+    background:var(--board-panel-2); border:1px solid var(--line); color:var(--cream-text);
+    width:32px;height:32px;border-radius:8px; cursor:pointer; font-size:15px;
+  }
+  .icon-btn:hover{background:var(--board);}
+
+  .weekdays{display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:6px;}
+  .weekdays div{text-align:center; font-size:11.5px; color:#9fb0ac; font-weight:500;}
+  .weekdays div:first-child{color:#e3897b;}
+  .weekdays div:last-child{color:#7fa3c9;}
+
+  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px;}
+  .day-cell{
+    background:var(--paper); border-radius:3px 3px 6px 6px;
+    min-height:64px; padding:6px 5px; cursor:pointer; position:relative;
+    display:flex; flex-direction:column; gap:3px;
+    border:2px solid transparent;
+    transition:transform .1s;
+  }
+  .day-cell:hover{transform:translateY(-2px);}
+  .day-cell.selected{border-color:var(--amber);}
+  .day-cell.out-month{opacity:.32;}
+  .day-cell.today .daynum{
+    background:var(--rust); color:#fff; border-radius:50%;
+    width:19px;height:19px;display:inline-flex;align-items:center;justify-content:center;
+  }
+  .daynum{font-size:11.5px; font-weight:700; color:var(--ink);}
+  .day-tags{display:flex; flex-wrap:wrap; gap:2px;}
+  .tag-dot{
+    width:15px;height:15px;border-radius:50%; font-size:8px; font-weight:700;
+    display:flex;align-items:center;justify-content:center; color:#fff;
+    flex:none;
+  }
+  .tag-more{font-size:9.5px; color:var(--ink-soft); align-self:center;}
+  .day-cell:focus-visible{outline:3px solid var(--amber);}
+
+  /* detail panel */
+  .detail{
+    margin-top:18px; background:var(--board-panel-2); border:1px solid var(--line);
+    border-radius:10px; padding:16px 18px;
+  }
+  .detail h3{
+    font-family:'Zen Kaku Gothic New',sans-serif; margin:0 0 12px; font-size:15px;
+  }
+  .leave-item{
+    display:flex; align-items:center; gap:8px; padding:8px 0;
+    border-bottom:1px solid var(--line); font-size:13.5px;
+  }
+  .leave-item:last-of-type{border-bottom:none;}
+  .leave-item .who{font-weight:700;}
+  .leave-item .range{color:#b9c6c2; margin-left:auto; font-size:12.5px;}
+  .leave-item .reason{color:#9fb0ac; font-size:12px;}
+  .leave-item .del{background:none;border:none;color:#c98b7c;cursor:pointer;font-size:13px;}
+
+  .lunch-check-row{display:flex; align-items:center; gap:10px; padding:7px 0; font-size:14px;}
+  .lunch-check-row input{width:18px; height:18px; accent-color:var(--rust);}
+
+  .inline-form{display:grid; gap:10px; margin-top:14px;}
+  .inline-form label{font-size:12px; color:#a9bab5; display:block; margin-bottom:4px;}
+  .inline-form select, .inline-form input[type=date], .inline-form input[type=text]{
+    width:100%; background:var(--board); border:1px solid var(--line); color:var(--cream-text);
+    border-radius:8px; padding:8px 10px; font-size:13.5px; font-family:inherit;
+  }
+  .form-grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .empty-msg{color:#9fb0ac; font-size:13.5px; padding:14px 0;}
+
+  /* leave summary list */
+  .summary-list{margin-bottom:24px;}
+  .summary-row{
+    display:flex; align-items:center; gap:10px; padding:9px 10px;
+    background:var(--board-panel-2); border-radius:8px; margin-bottom:6px; font-size:13.5px;
+  }
+  .summary-row .range{margin-left:auto; color:#b9c6c2; font-size:12px;}
+
+  .foot-note{
+    text-align:center; font-size:11.5px; color:#7f948f; margin-top:22px; line-height:1.7;
+  }
+
+  /* closed days */
+  .closed-panel{
+    background:var(--board-panel-2); border:1px solid var(--line); border-radius:10px;
+    padding:14px 16px; margin-bottom:22px;
+  }
+  .closed-row{
+    display:flex; align-items:center; gap:8px; padding:6px 0; font-size:13.5px;
+    border-bottom:1px solid var(--line);
+  }
+  .closed-row:last-of-type{border-bottom:none;}
+  .closed-row .date{font-weight:700;}
+  .closed-row .reason{color:#9fb0ac; font-size:12px;}
+  .closed-row .del{background:none;border:none;color:#c98b7c;cursor:pointer;font-size:13px;margin-left:auto;}
+  .closed-add-row{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
+  .closed-add-row input[type=date]{
+    background:var(--board); border:1px solid var(--line); color:var(--cream-text);
+    border-radius:8px; padding:8px 10px; font-size:13.5px; font-family:inherit;
+  }
+  .closed-add-row input[type=text]{
+    flex:1; min-width:140px;
+    background:var(--board); border:1px solid var(--line); color:var(--cream-text);
+    border-radius:8px; padding:8px 10px; font-size:13.5px; font-family:inherit;
+  }
+
+  .day-cell.closed-day{
+    background:
+      repeating-linear-gradient(135deg, var(--paper-dim) 0px, var(--paper-dim) 5px, var(--paper) 5px, var(--paper) 10px);
+  }
+  .closed-badge{
+    position:absolute; top:3px; right:3px; font-size:8px; font-weight:700;
+    color:#fff; background:var(--ink); padding:1px 4px; border-radius:4px; letter-spacing:.02em;
+  }
+
+  /* change log */
+  .log-row{
+    display:flex; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); font-size:13.5px;
+    align-items:baseline;
+  }
+  .log-row:last-of-type{border-bottom:none;}
+  .log-time{color:#8fa19d; font-size:11.5px; white-space:nowrap; flex:none;}
+  .log-msg{color:var(--cream-text);}
+
+  @media (prefers-reduced-motion: reduce){
+    .day-cell, .btn{transition:none;}
+  }
+  @media (max-width:480px){
+    .day-cell{min-height:52px; padding:4px;}
+    .board-body{padding:22px 12px;}
+  }
+
+  /* login screen */
+  .login-wrap{
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background: var(--board);
+  }
+  .login-card{
+    background:var(--paper); color:var(--ink); border-radius:12px;
+    padding:32px 28px; width:100%; max-width:320px; box-shadow:0 10px 30px rgba(0,0,0,0.3);
+  }
+  .login-card h1{
+    font-family:'Zen Kaku Gothic New',sans-serif; font-size:19px; margin:0 0 6px;
+  }
+  .login-card p{font-size:13px; color:var(--ink-soft); margin:0 0 18px;}
+  .login-card input{
+    width:100%; box-sizing:border-box; padding:10px 12px; border-radius:8px;
+    border:1px solid #cfc4a8; font-size:14px; margin-bottom:10px; font-family:inherit;
+  }
+  .login-card .error{color:var(--rust); font-size:12.5px; margin-bottom:8px; display:none;}
+  .login-card button{width:100%;}
+</style>
+</head>
+<body>
+
+<div class="login-wrap" id="loginScreen">
+  <div class="login-card">
+    <h1>🔒 料亭ブンゴ祇園スケジュール確認</h1>
+    <p>共有パスワードを入力してください</p>
+    <div class="error" id="loginError">パスワードが違います</div>
+    <input type="password" id="loginPassword" placeholder="パスワード" autocomplete="current-password">
+    <button class="btn" id="loginBtn" style="width:100%;">ログイン</button>
+  </div>
+</div>
+
+<div class="app" id="appRoot" style="display:none;">
+  <div class="wrap">
+
+    <div class="headboard">
+      <div class="pin"></div>
+      <div class="shopname-row">
+        <span class="shopname" id="shopName" contenteditable="true" spellcheck="false">料亭ブンゴ祇園スケジュール確認</span>
+      </div>
+      <div class="subtitle">長期休暇・ランチNG・休館日を、メンバー全員で確認・入力できます。変更はすべて履歴に残ります。</div>
+
+      <div class="tabs">
+        <button class="tab-btn active" id="tabLeaveBtn">🏖 長期休暇</button>
+        <button class="tab-btn" id="tabLunchBtn">🍱 ランチNG</button>
+        <button class="tab-btn" id="tabLogBtn">📋 変更履歴</button>
+      </div>
+    </div>
+
+    <div class="board-body">
+
+      <div id="mainViewWrap">
+        <div class="section-label">メンバー</div>
+        <div class="member-row" id="memberRow"></div>
+        <div class="add-member">
+          <input type="text" id="newMemberName" placeholder="メンバー名を入力（例：田中）" maxlength="12">
+          <select id="newMemberRole"></select>
+          <button class="btn ghost" id="addCategoryBtn" type="button">＋ カテゴリ追加</button>
+          <button class="btn" id="addMemberBtn">＋ メンバー追加</button>
+        </div>
+
+        <div class="closed-panel" id="closedPanelWrap">
+          <div class="section-label">休館日</div>
+          <div id="closedListWrap"></div>
+          <div class="closed-add-row">
+            <input type="date" id="newClosedDate">
+            <input type="text" id="newClosedReason" placeholder="理由（任意・例：棚卸し）" maxlength="20">
+            <button class="btn ghost" id="addClosedBtn" type="button">＋ 休館日を登録</button>
+          </div>
+        </div>
+
+        <div id="leaveSummaryWrap"></div>
+
+        <div class="quick-picker" id="quickPickerWrap">
+          <label for="quickMemberSelect">入力するメンバー</label>
+          <select id="quickMemberSelect"><option value="">選択なし</option></select>
+          <span class="hint">選んだ状態でカレンダーの日付をタップすると、その日のNG（入れない日）を1日単位でオン/オフできます。連続した休暇は下のフォームからどうぞ。</span>
+        </div>
+
+        <div class="cal-nav">
+          <div class="cal-title" id="calTitle"></div>
+          <div class="nav-btns">
+            <button class="icon-btn" id="prevMonth">‹</button>
+            <button class="icon-btn" id="todayBtn" title="今月へ">●</button>
+            <button class="icon-btn" id="nextMonth">›</button>
+          </div>
+        </div>
+
+        <div class="weekdays">
+          <div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+
+        <div class="detail" id="detailPanel"></div>
+      </div>
+
+      <div id="logViewWrap" style="display:none;">
+        <div class="section-label">変更履歴</div>
+        <div id="logListWrap"></div>
+      </div>
+
+      <div class="foot-note">このスケジュールは店舗メンバー全員に共有されます（誰でも閲覧・編集できます）</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const PALETTE = ['#6C93A6','#8B5E83','#D9A441','#6E8B5D','#C1543A','#4F8C82','#B8874F','#7A6C8B','#5C7EA8','#A2683F','#5B8C6E','#A85C7C','#7C9A3E','#4A7A8C','#B6763E','#916BA8'];
+  const STORAGE_KEY = 'shop-schedule-data-v1';
+
+  let data = { members: [], leaves: [], lunch: {}, categories: ['社員','ホール','キッチン','お手伝い'], categoryColors: {}, changeLog: [], closedDays: [] };
+  let currentTab = 'leave'; // 'leave' | 'lunch' | 'log'
+  let viewDate = new Date();
+  let selectedDate = null;
+  let quickMemberId = '';
+
+  const $ = (sel) => document.querySelector(sel);
+
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function iso(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+  function fmtRange(s,e){
+    const sd = new Date(s), ed = new Date(e);
+    const f = (d)=> `${d.getMonth()+1}/${d.getDate()}`;
+    return s===e ? f(sd) : `${f(sd)} 〜 ${f(ed)}`;
+  }
+  function fmtLogTime(ts){
+    const d = new Date(ts);
+    return `${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  function logChange(msg){
+    if(!data.changeLog) data.changeLog = [];
+    data.changeLog.unshift({ id: uid(), ts: Date.now(), msg });
+    if(data.changeLog.length > 300) data.changeLog.length = 300;
+  }
+  function isClosed(dateStr){
+    return (data.closedDays||[]).some(c => c.date === dateStr);
+  }
+  function memberById(id){ return data.members.find(m=>m.id===id); }
+  function initials(name){ return name.slice(0,2); }
+  function usedColors(){ return new Set(Object.values(data.categoryColors||{})); }
+  function nextColor(){
+    const used = usedColors();
+    const free = PALETTE.find(c => !used.has(c));
+    return free || PALETTE[Object.keys(data.categoryColors||{}).length % PALETTE.length];
+  }
+  function getCategoryColor(category){
+    const cat = category || '未分類';
+    if(!data.categoryColors) data.categoryColors = {};
+    if(!data.categoryColors[cat]){
+      data.categoryColors[cat] = nextColor();
+    }
+    return data.categoryColors[cat];
+  }
+  function uid(){ return Math.random().toString(36).slice(2,9); }
+
+  const SEED_ROSTER = [
+    ['社員', ['まつむら','つだ','なかやま','うえのくん']],
+    ['ホール', ['めり','さくら','ゆうり','てる','たおん','りいち','ひなの','たつき','ゆい','あげは','のあ','すい','そうし']],
+    ['キッチン', ['みやちゃん','ゆうしん','かずま','りつき','がく','しゅんや','いまる']],
+    ['お手伝い', ['たかまさ']]
+  ];
+
+  const CATEGORY_DEFAULT_COLORS = {
+    '社員':'#D9A441',
+    'ホール':'#4F8C82',
+    'キッチン':'#C1543A',
+    'お手伝い':'#7A6C8B'
+  };
+
+  function mergeSeedRoster(){
+    const existingNames = new Set(data.members.map(m=>m.name));
+    if(!data.categoryColors) data.categoryColors = {};
+    SEED_ROSTER.forEach(([cat, names])=>{
+      if(!data.categories.includes(cat)) data.categories.push(cat);
+      if(!data.categoryColors[cat] && CATEGORY_DEFAULT_COLORS[cat]){
+        data.categoryColors[cat] = CATEGORY_DEFAULT_COLORS[cat];
+      }
+      names.forEach(name=>{
+        if(!existingNames.has(name)){
+          data.members.push({ id: uid(), name, category: cat });
+          existingNames.add(name);
+        }
+      });
+    });
+  }
+
+  async function checkSession(){
+    const res = await fetch('/api/session');
+    const j = await res.json();
+    return j.authed;
+  }
+
+  async function showApp(){
+    $('#loginScreen').style.display = 'none';
+    $('#appRoot').style.display = 'block';
+    await load();
+  }
+
+  $('#loginBtn').addEventListener('click', doLogin);
+  $('#loginPassword').addEventListener('keydown', (e)=>{ if(e.key==='Enter') doLogin(); });
+  async function doLogin(){
+    const pw = $('#loginPassword').value;
+    const res = await fetch('/api/login', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ password: pw })
+    });
+    if(res.ok){
+      $('#loginError').style.display = 'none';
+      showApp();
+    } else {
+      $('#loginError').style.display = 'block';
+    }
+  }
+
+  async function load(){
+    try{
+      const res = await fetch('/api/data');
+      if(res.status===401){
+        $('#appRoot').style.display='none';
+        $('#loginScreen').style.display='flex';
+        return;
+      }
+      const parsed = await res.json();
+      data = Object.assign({members:[],leaves:[],lunch:{},categories:['社員','ホール','キッチン','お手伝い'],changeLog:[],closedDays:[]}, parsed);
+      if(!data.changeLog) data.changeLog = [];
+      if(!data.closedDays) data.closedDays = [];
+      if(!data.categories) data.categories = ['社員','ホール','キッチン','お手伝い'];
+    }catch(e){ console.error('読み込みに失敗しました', e); }
+
+    if(!data.categoryColors) data.categoryColors = {};
+    Object.keys(CATEGORY_DEFAULT_COLORS).forEach(cat=>{
+      if(data.categories.includes(cat) && !data.categoryColors[cat]){
+        data.categoryColors[cat] = CATEGORY_DEFAULT_COLORS[cat];
+      }
+    });
+
+    if(!data.seeded){
+      mergeSeedRoster();
+      data.seeded = true;
+      await save();
+    }
+    render();
+  }
+  async function save(){
+    try{
+      const res = await fetch('/api/data', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)
+      });
+      if(res.status===401){
+        $('#appRoot').style.display='none';
+        $('#loginScreen').style.display='flex';
+      }
+    }catch(e){ console.error('保存に失敗しました', e); }
+  }
+
+  // ---------- members ----------
+  function allCategoriesInOrder(){
+    const known = data.categories && data.categories.length ? data.categories.slice() : [];
+    const extra = Array.from(new Set(data.members.map(m=>m.category).filter(c=>c && !known.includes(c))));
+    return known.concat(extra);
+  }
+
+  function renderCategorySelect(){
+    const sel = $('#newMemberRole');
+    const prev = sel.value;
+    const cats = allCategoriesInOrder();
+    sel.innerHTML = cats.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    if(cats.includes(prev)) sel.value = prev;
+  }
+
+  $('#addCategoryBtn').addEventListener('click', ()=>{
+    const name = (window.prompt('新しいカテゴリ名を入力してください（例：デリバリー）') || '').trim();
+    if(!name) return;
+    if(!data.categories.includes(name)) data.categories.push(name);
+    getCategoryColor(name);
+    logChange(`カテゴリ「${name}」を追加しました`);
+    save();
+    renderCategorySelect();
+    $('#newMemberRole').value = name;
+  });
+
+  function renderMembers(){
+    const row = $('#memberRow');
+    renderCategorySelect();
+    if(data.members.length===0){
+      row.innerHTML = `<span class="empty-msg">まだメンバーがいません。下から追加してください。</span>`;
+      return;
+    }
+    const cats = allCategoriesInOrder();
+    row.innerHTML = cats.map(cat=>{
+      const members = data.members.filter(m => (m.category || '未分類')===cat);
+      if(members.length===0) return '';
+      return `
+        <div class="member-group">
+          <div class="member-group-label"><span class="cat-swatch" style="background:${getCategoryColor(cat)}"></span>${escapeHtml(cat)}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            ${members.map(m=>`
+              <span class="chip">
+                <span class="dot" style="background:${getCategoryColor(m.category)}"></span>
+                ${escapeHtml(m.name)}
+                <button data-remove-member="${m.id}" title="削除">×</button>
+              </span>
+            `).join('')}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  $('#addMemberBtn').addEventListener('click', addMember);
+  $('#newMemberName').addEventListener('keydown', e=>{ if(e.key==='Enter') addMember(); });
+  function addMember(){
+    const input = $('#newMemberName');
+    const category = $('#newMemberRole').value;
+    const name = input.value.trim();
+    if(!name) return;
+    data.members.push({ id: uid(), name, category });
+    logChange(`${name}を追加しました（${category}）`);
+    input.value='';
+    save(); render();
+  }
+
+  document.addEventListener('click', (e)=>{
+    const rid = e.target.getAttribute && e.target.getAttribute('data-remove-member');
+    if(rid){
+      const mem = memberById(rid);
+      data.members = data.members.filter(m=>m.id!==rid);
+      data.leaves = data.leaves.filter(l=>l.memberId!==rid);
+      Object.keys(data.lunch).forEach(dt=>{
+        data.lunch[dt] = data.lunch[dt].filter(id=>id!==rid);
+      });
+      if(mem) logChange(`${mem.name}を削除しました`);
+      save(); render();
+    }
+  });
+
+  // ---------- tabs ----------
+  $('#tabLeaveBtn').addEventListener('click', ()=>{ currentTab='leave'; selectedDate=null; render(); });
+  $('#tabLunchBtn').addEventListener('click', ()=>{ currentTab='lunch'; selectedDate=null; render(); });
+  $('#tabLogBtn').addEventListener('click', ()=>{ currentTab='log'; render(); });
+
+  // ---------- calendar nav ----------
+  $('#prevMonth').addEventListener('click', ()=>{ viewDate.setMonth(viewDate.getMonth()-1); render(); });
+  $('#nextMonth').addEventListener('click', ()=>{ viewDate.setMonth(viewDate.getMonth()+1); render(); });
+  $('#todayBtn').addEventListener('click', ()=>{ viewDate = new Date(); render(); });
+
+  function leavesOn(dateStr){
+    return data.leaves.filter(l => dateStr >= l.start && dateStr <= l.end);
+  }
+
+  function isSingleDayNg(memberId, dateStr){
+    return data.leaves.some(l => l.memberId===memberId && l.start===dateStr && l.end===dateStr);
+  }
+
+  function toggleQuickNg(memberId, dateStr){
+    const existing = data.leaves.find(l => l.memberId===memberId && l.start===dateStr && l.end===dateStr);
+    const mem = memberById(memberId);
+    const name = mem ? mem.name : '';
+    if(existing){
+      data.leaves = data.leaves.filter(l => l.id!==existing.id);
+      logChange(`${name}のNG日を解除しました: ${dateStr}`);
+    } else {
+      data.leaves.push({ id: uid(), memberId, start: dateStr, end: dateStr, reason: '' });
+      logChange(`${name}のNG日を追加しました: ${dateStr}`);
+    }
+    save();
+  }
+
+  function renderQuickPicker(){
+    const wrap = $('#quickPickerWrap');
+    if(currentTab!=='leave' || data.members.length===0){ wrap.style.display='none'; return; }
+    wrap.style.display='flex';
+    const sel = $('#quickMemberSelect');
+    const prev = quickMemberId;
+    sel.innerHTML = `<option value="">選択なし</option>` + data.members.map(m=>`<option value="${m.id}">${escapeHtml(m.name)}</option>`).join('');
+    sel.value = prev;
+    if(sel.value !== prev) quickMemberId = '';
+  }
+
+  $('#quickMemberSelect').addEventListener('change', (e)=>{
+    quickMemberId = e.target.value;
+    renderCalendar();
+  });
+
+  function renderCalendar(){
+    $('#tabLeaveBtn').classList.toggle('active', currentTab==='leave');
+    $('#tabLunchBtn').classList.toggle('active', currentTab==='lunch');
+    renderQuickPicker();
+
+    const y = viewDate.getFullYear(), m = viewDate.getMonth();
+    $('#calTitle').textContent = `${y}年 ${m+1}月`;
+
+    const firstDay = new Date(y, m, 1);
+    const startOffset = firstDay.getDay();
+    const gridStart = new Date(y, m, 1 - startOffset);
+    const todayStr = iso(new Date());
+
+    let html = '';
+    for(let i=0;i<42;i++){
+      const d = new Date(gridStart);
+      d.setDate(gridStart.getDate()+i);
+      const dStr = iso(d);
+      const outMonth = d.getMonth()!==m;
+      const isToday = dStr===todayStr;
+      const isSelected = dStr===selectedDate;
+
+      let tagsHtml = '';
+      if(currentTab==='leave'){
+        const ls = leavesOn(dStr);
+        const shown = ls.slice(0,4);
+        tagsHtml = shown.map(l=>{
+          const mem = memberById(l.memberId);
+          if(!mem) return '';
+          return `<span class="tag-dot" style="background:${getCategoryColor(mem.category)}">${escapeHtml(initials(mem.name))}</span>`;
+        }).join('') + (ls.length>4 ? `<span class="tag-more">+${ls.length-4}</span>` : '');
+      } else {
+        const ids = data.lunch[dStr] || [];
+        const shown = ids.slice(0,4);
+        tagsHtml = shown.map(id=>{
+          const mem = memberById(id);
+          if(!mem) return '';
+          return `<span class="tag-dot" style="background:${getCategoryColor(mem.category)}">${escapeHtml(initials(mem.name))}</span>`;
+        }).join('') + (ids.length>4 ? `<span class="tag-more">+${ids.length-4}</span>` : '');
+      }
+
+      const quickOn = (currentTab==='leave' && quickMemberId && isSingleDayNg(quickMemberId, dStr));
+      const closedOn = isClosed(dStr);
+
+      html += `
+        <div class="day-cell ${outMonth?'out-month':''} ${isToday?'today':''} ${isSelected?'selected':''} ${quickOn?'quick-on':''} ${closedOn?'closed-day':''}"
+             data-date="${dStr}" tabindex="0" role="button" aria-label="${dStr}">
+          <span class="daynum">${d.getDate()}</span>
+          ${closedOn ? `<span class="closed-badge">休館</span>` : ''}
+          <div class="day-tags">${tagsHtml}</div>
+        </div>`;
+    }
+    $('#calGrid').innerHTML = html;
+
+    function handleDayActivate(dateStr){
+      selectedDate = dateStr;
+      if(currentTab==='leave' && quickMemberId){
+        toggleQuickNg(quickMemberId, dateStr);
+      }
+      render();
+    }
+    document.querySelectorAll('.day-cell').forEach(cell=>{
+      cell.addEventListener('click', ()=> handleDayActivate(cell.getAttribute('data-date')));
+      cell.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); handleDayActivate(cell.getAttribute('data-date')); } });
+    });
+  }
+
+  function renderLeaveSummary(){
+    const wrap = $('#leaveSummaryWrap');
+    if(currentTab!=='leave'){ wrap.innerHTML=''; return; }
+    const todayStr = iso(new Date());
+    const upcoming = data.leaves
+      .filter(l => l.end >= todayStr)
+      .sort((a,b)=> a.start.localeCompare(b.start));
+
+    if(data.members.length===0){ wrap.innerHTML=''; return; }
+
+    wrap.innerHTML = `
+      <div class="section-label">休暇予定一覧（近い順）</div>
+      <div class="summary-list">
+        ${ upcoming.length===0
+            ? `<div class="empty-msg">登録されている休暇予定はありません。カレンダーの日付をクリックして追加できます。</div>`
+            : upcoming.map(l=>{
+                const mem = memberById(l.memberId);
+                if(!mem) return '';
+                return `<div class="summary-row">
+                  <span class="dot" style="background:${getCategoryColor(mem.category)}"></span>
+                  <span>${escapeHtml(mem.name)}</span>
+                  ${l.reason ? `<span style="color:#9fb0ac;">（${escapeHtml(l.reason)}）</span>` : ''}
+                  <span class="range">${fmtRange(l.start,l.end)}</span>
+                </div>`;
+              }).join('')
+        }
+      </div>`;
+  }
+
+  function renderDetail(){
+    const panel = $('#detailPanel');
+    if(!selectedDate){
+      panel.innerHTML = `<div class="empty-msg">カレンダーの日付をクリックすると、詳細の確認・入力ができます。</div>`;
+      return;
+    }
+    const [yy,mm,dd] = selectedDate.split('-');
+    const label = `${yy}年${parseInt(mm)}月${parseInt(dd)}日`;
+    const closed = isClosed(selectedDate);
+    const closureHtml = `
+      <div class="closed-row" style="margin-bottom:14px;">
+        <span>${closed ? '🚫 この日は休館日です' : 'この日は営業日です'}</span>
+        <button class="btn ghost" id="toggleClosedBtn" type="button" style="margin-left:auto;">${closed ? '休館日を解除' : '休館日にする'}</button>
+      </div>`;
+
+    if(currentTab==='leave'){
+      const ls = leavesOn(selectedDate);
+      const memberOptions = data.members.map(m=>`<option value="${m.id}">${escapeHtml(m.name)}</option>`).join('');
+      panel.innerHTML = `
+        ${closureHtml}
+        <h3>${label} の休暇</h3>
+        ${ ls.length===0 ? `<div class="empty-msg">この日に休暇予定のメンバーはいません。</div>` :
+          ls.map(l=>{
+            const mem = memberById(l.memberId);
+            if(!mem) return '';
+            return `<div class="leave-item">
+              <span class="dot" style="background:${getCategoryColor(mem.category)}"></span>
+              <span class="who">${escapeHtml(mem.name)}</span>
+              ${l.reason ? `<span class="reason">（${escapeHtml(l.reason)}）</span>` : ''}
+              <span class="range">${fmtRange(l.start,l.end)}</span>
+              <button class="del" data-del-leave="${l.id}">削除</button>
+            </div>`;
+          }).join('')
+        }
+        ${ data.members.length===0 ? `<div class="empty-msg">先にメンバーを追加してください。</div>` : `
+        <div class="inline-form">
+          <div>
+            <label>メンバー</label>
+            <select id="leaveMember">${memberOptions}</select>
+          </div>
+          <div class="form-grid2">
+            <div>
+              <label>開始日</label>
+              <input type="date" id="leaveStart" value="${selectedDate}">
+            </div>
+            <div>
+              <label>終了日</label>
+              <input type="date" id="leaveEnd" value="${selectedDate}">
+            </div>
+          </div>
+          <div>
+            <label>理由（任意）</label>
+            <input type="text" id="leaveReason" placeholder="例：夏季休暇、私用">
+          </div>
+          <button class="btn" id="saveLeaveBtn">この休暇を登録</button>
+        </div>`}
+      `;
+      const saveBtn = $('#saveLeaveBtn');
+      if(saveBtn){
+        saveBtn.addEventListener('click', ()=>{
+          const memberId = $('#leaveMember').value;
+          const start = $('#leaveStart').value;
+          const end = $('#leaveEnd').value;
+          const reason = $('#leaveReason').value.trim();
+          if(!memberId || !start || !end){ return; }
+          if(end < start){ alert('終了日は開始日以降にしてください'); return; }
+          data.leaves.push({ id: uid(), memberId, start, end, reason });
+          const mem = memberById(memberId);
+          logChange(`${mem ? mem.name : ''}の休暇を登録しました: ${fmtRange(start,end)}${reason ? '（'+reason+'）' : ''}`);
+          save(); render();
+        });
+      }
+      document.querySelectorAll('[data-del-leave]').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const id = btn.getAttribute('data-del-leave');
+          const l = data.leaves.find(x=>x.id===id);
+          const mem = l ? memberById(l.memberId) : null;
+          data.leaves = data.leaves.filter(l=>l.id!==id);
+          if(l) logChange(`${mem ? mem.name : ''}の休暇を削除しました: ${fmtRange(l.start,l.end)}`);
+          save(); render();
+        });
+      });
+
+    } else {
+      if(data.members.length===0){
+        panel.innerHTML = `${closureHtml}<h3>${label} のランチNG</h3><div class="empty-msg">先にメンバーを追加してください。</div>`;
+        return;
+      }
+      const ids = data.lunch[selectedDate] || [];
+      panel.innerHTML = `
+        ${closureHtml}
+        <h3>${label} のランチNG</h3>
+        <div class="empty-msg" style="padding:0 0 12px;">この日ランチに入れないメンバーにチェックを入れてください</div>
+        ${ data.members.map(m=>`
+          <label class="lunch-check-row">
+            <input type="checkbox" data-lunch-member="${m.id}" ${ids.includes(m.id)?'checked':''}>
+            <span class="dot" style="background:${getCategoryColor(m.category)}"></span>
+            ${escapeHtml(m.name)}
+          </label>
+        `).join('') }
+      `;
+      document.querySelectorAll('[data-lunch-member]').forEach(cb=>{
+        cb.addEventListener('change', ()=>{
+          const id = cb.getAttribute('data-lunch-member');
+          const mem = memberById(id);
+          const set = new Set(data.lunch[selectedDate] || []);
+          if(cb.checked) set.add(id); else set.delete(id);
+          data.lunch[selectedDate] = Array.from(set);
+          logChange(`${selectedDate} のランチNGに ${mem ? mem.name : ''} を${cb.checked ? '追加':'解除'}しました`);
+          save(); renderCalendar();
+        });
+      });
+    }
+  }
+
+  // shop name editing
+  let shopNameTimer;
+  $('#shopName').addEventListener('input', ()=>{
+    clearTimeout(shopNameTimer);
+    shopNameTimer = setTimeout(()=>{
+      data.shopName = $('#shopName').textContent;
+      save();
+    }, 500);
+  });
+
+  function renderClosedList(){
+    const wrap = $('#closedListWrap');
+    const list = (data.closedDays||[]).slice().sort((a,b)=>a.date.localeCompare(b.date));
+    const todayStr = iso(new Date());
+    const upcoming = list.filter(c => c.date >= todayStr);
+    if(upcoming.length===0){
+      wrap.innerHTML = `<div class="empty-msg">登録されている休館日はありません。</div>`;
+      return;
+    }
+    wrap.innerHTML = upcoming.map(c=>{
+      const d = new Date(c.date);
+      const label = `${d.getMonth()+1}/${d.getDate()}`;
+      return `<div class="closed-row">
+        <span class="date">${label}</span>
+        ${c.reason ? `<span class="reason">（${escapeHtml(c.reason)}）</span>` : ''}
+        <button class="del" data-del-closed="${c.date}">削除</button>
+      </div>`;
+    }).join('');
+  }
+
+  function addClosedDay(dateStr, reason){
+    if(!dateStr) return;
+    if((data.closedDays||[]).some(c=>c.date===dateStr)) return;
+    data.closedDays = data.closedDays || [];
+    data.closedDays.push({ date: dateStr, reason: reason || '' });
+    logChange(`${dateStr} を休館日に設定しました${reason ? '（'+reason+'）' : ''}`);
+    save(); render();
+  }
+  function removeClosedDay(dateStr){
+    data.closedDays = (data.closedDays||[]).filter(c=>c.date!==dateStr);
+    logChange(`${dateStr} の休館日を解除しました`);
+    save(); render();
+  }
+
+  $('#addClosedBtn').addEventListener('click', ()=>{
+    const dateInput = $('#newClosedDate');
+    const reasonInput = $('#newClosedReason');
+    if(!dateInput.value) return;
+    addClosedDay(dateInput.value, reasonInput.value.trim());
+    dateInput.value=''; reasonInput.value='';
+  });
+  document.addEventListener('click', (e)=>{
+    const cd = e.target.getAttribute && e.target.getAttribute('data-del-closed');
+    if(cd) removeClosedDay(cd);
+    if(e.target && e.target.id === 'toggleClosedBtn' && selectedDate){
+      if(isClosed(selectedDate)) removeClosedDay(selectedDate);
+      else addClosedDay(selectedDate, '');
+    }
+  });
+
+  function renderLog(){
+    const wrap = $('#logListWrap');
+    const items = data.changeLog || [];
+    if(items.length===0){
+      wrap.innerHTML = `<div class="empty-msg">まだ変更履歴はありません。メンバーの追加や休暇の登録などを行うとここに記録されます。</div>`;
+      return;
+    }
+    wrap.innerHTML = items.map(it=>`
+      <div class="log-row">
+        <span class="log-time">${fmtLogTime(it.ts)}</span>
+        <span class="log-msg">${escapeHtml(it.msg)}</span>
+      </div>
+    `).join('');
+  }
+
+  function render(){
+    const isLog = currentTab==='log';
+    $('#mainViewWrap').style.display = isLog ? 'none' : 'block';
+    $('#logViewWrap').style.display = isLog ? 'block' : 'none';
+    $('#tabLeaveBtn').classList.toggle('active', currentTab==='leave');
+    $('#tabLunchBtn').classList.toggle('active', currentTab==='lunch');
+    $('#tabLogBtn').classList.toggle('active', currentTab==='log');
+
+    if(isLog){
+      renderLog();
+      return;
+    }
+    renderMembers();
+    renderClosedList();
+    renderLeaveSummary();
+    renderCalendar();
+    renderDetail();
+    if(data.shopName){
+      const el = $('#shopName');
+      if(document.activeElement!==el) el.textContent = data.shopName;
+    }
+  }
+
+  (async function init(){
+    const authed = await checkSession();
+    if(authed) await showApp();
+    else {
+      $('#loginScreen').style.display = 'flex';
+      $('#appRoot').style.display = 'none';
+    }
+  })();
+})();
+</script>
+</body>
+</html>
